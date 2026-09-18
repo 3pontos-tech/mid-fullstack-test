@@ -20,7 +20,7 @@ Bem-vindo(a) ao processo seletivo da 3Pontos Tech. Este desafio avalia **modelag
 
 ## O produto
 
-**Passa** é um cartão corporativo pré-pago. A empresa deposita um saldo. Cada funcionário tem um cartão com limite mensal e regras. A **rede do cartão** chama o Passa a cada compra e, depois, informa por webhook o que foi cobrado ou cancelado. O financeiro acompanha em um painel.
+**Passa** é um cartão corporativo pré-pago. A empresa deposita um saldo. Cada funcionário tem um cartão com limite mensal e regras. A **rede do cartão** é a bandeira, como Visa ou Mastercard: ela recebe a compra da maquininha e pergunta ao emissor do cartão, o Passa, se pode aprovar. Depois, informa por webhook o que foi de fato cobrado ou cancelado. O financeiro acompanha em um painel.
 
 ### Dados fixos da Acme
 
@@ -257,10 +257,10 @@ Estorno, fechamento do mês, exportação, comprovante, aprovação de despesa, 
 | Critério | Peso |
 |---|---|
 | Modelagem e decisões registradas | 35 |
-| Regras corretas nos cenários, inclusive os não listados | 20 |
+| Integração com a rede: cenários, inclusive os não listados | 20 |
 | Arquitetura e uso da stack | 15 |
 | Testes | 10 |
-| Painel, área do funcionário e integração com a rede | 15 |
+| Painel e área do funcionário | 15 |
 | Comunicação: MODEL, README, commits | 5 |
 
 Modelo completo com implementação parcial vale mais que implementação completa com modelo raso. Se o tempo apertar, entregue as etapas na ordem e documente o que ficou de fora.
