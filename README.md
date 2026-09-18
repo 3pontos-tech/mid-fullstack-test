@@ -61,7 +61,7 @@ As etapas 1 a 3 não têm interface: são a integração com a rede. As etapas 4
 - A rede considera entregue qualquer `2xx`. Diante de `5xx` ou timeout, reenvia. O mesmo `id` pode chegar mais de uma vez.
 - Valores sempre em **centavos inteiros** (`*_cents`). `currency` é sempre `BRL` neste desafio.
 - "Mês" é o mês calendário no fuso da Acme, `America/Sao_Paulo`.
-- Nos seus testes, você faz o papel da rede. Na avaliação, rodamos os nossos próprios cenários contra o seu sistema.
+- Não existe nenhum sistema externo neste desafio. A rede é um papel do domínio: nos seus testes, você faz esse papel; na avaliação, os nossos cenários fazem. Nada chama os seus endpoints por conta própria.
 
 ---
 
