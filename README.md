@@ -56,7 +56,7 @@ As etapas 1 a 3 não têm interface: são a integração com a rede. As etapas 4
 ### Regras gerais da API da rede
 
 - Endpoints `/api/network/*` não usam sessão nem token de usuário. A única autenticação é a assinatura.
-- Toda requisição da rede traz `X-Network-Timestamp` (Unix, segundos) e `X-Network-Signature: sha256=<hex minúsculo do HMAC-SHA256 de "<timestamp>.<corpo bruto>", chave NETWORK_SECRET>`. Assinatura inválida ou timestamp com mais de 5 minutos de diferença: `401`.
+- Toda requisição da rede traz `X-Network-Timestamp` (Unix, segundos) e `X-Network-Signature: sha256=<hex minúsculo do HMAC-SHA256 de "<timestamp>.<corpo bruto>", chave NETWORK_SECRET>`. Requisição sem corpo assina `"<timestamp>."`, com o corpo vazio. Assinatura inválida ou timestamp com mais de 5 minutos de diferença: `401`.
 - Payload que não segue o contrato: `422`. A rede **não reenvia** respostas `4xx`.
 - A rede considera entregue qualquer `2xx`. Diante de `5xx` ou timeout, reenvia. O mesmo `id` pode chegar mais de uma vez.
 - Valores sempre em **centavos inteiros** (`*_cents`). `currency` é sempre `BRL` neste desafio.
@@ -133,15 +133,15 @@ As etapas 1 a 3 não têm interface: são a integração com a rede. As etapas 4
 
 **Requisitos**
 
-1. Toda movimentação que altera o disponível de um cartão ou o saldo da empresa é uma **transaction**. Uma transaction registrada não é alterada nem apagada.
-2. Disponível do cartão e saldo da empresa são **derivados das transactions**.
+1. Toda movimentação que altera o limite restante de um cartão ou o saldo da empresa é uma **transaction**. Uma transaction registrada não é alterada nem apagada.
+2. **Limit remaining** é o que sobra do limite mensal do cartão depois das reservas e capturas do mês. **Available** é o menor entre o limit remaining e o saldo disponível da empresa. Os dois, e o saldo da empresa, são **derivados das transactions**.
 3. `GET /api/network/cards/{card_token}/available`
 
     ```json
-    { "available_cents": 143000 }
+    { "available_cents": 143000, "limit_remaining_cents": 143000 }
     ```
 
-4. `GET /api/network/cards/{card_token}/statement` — transactions do mês corrente, em ordem cronológica:
+4. `GET /api/network/cards/{card_token}/statement` — transactions do mês corrente, em ordem cronológica, com o limite restante após cada uma:
 
     ```json
     {
@@ -151,15 +151,15 @@ As etapas 1 a 3 não têm interface: são a integração com a rede. As etapas 4
           "type": "<identificador seu>",
           "amount_cents": -12990,
           "reference": "aut_01J8KQ7Z3N9M2P4R6T8V0W1X2Y",
-          "available_after_cents": 187010
+          "limit_remaining_after_cents": 187010
         }
       ]
     }
     ```
 
-    `amount_cents` negativo reduz o disponível, positivo devolve. `reference` é o `id` da authorization ou do event de origem, ou `null` para movimentos da empresa.
+    `amount_cents` negativo reduz o limite restante, positivo devolve. `reference` é o `id` da authorization ou do event de origem.
 
-5. **Invariante:** `available_after_cents` da última transaction do statement é igual a `available_cents` da consulta. A avaliação confere ao final de cada cenário.
+5. **Invariante:** `limit_remaining_after_cents` da última transaction do statement é igual a `limit_remaining_cents` da consulta, e `available_cents` nunca passa de `limit_remaining_cents`. A avaliação confere ao final de cada cenário.
 
 Ambos os endpoints são assinados como os demais. São os únicos endpoints de leitura com contrato fixo.
 
@@ -172,7 +172,7 @@ Filament em `/admin`, login da Marina. O painel não cria endpoints: lê o mesmo
 **Requisitos**
 
 1. Cartões com o disponível atual.
-2. Statement de cada cartão: transactions do mês com o disponível após cada uma.
+2. Statement de cada cartão: transactions do mês com o limite restante após cada uma.
 3. História de cada compra: authorization (`decision` e `reason`), captures e cancellation, com horários, na ordem.
 4. Statement da empresa: depósitos e capturas, com o saldo resultante.
 5. Authorizations negadas, com `reason`.
@@ -206,7 +206,7 @@ Não há resposta certa. Há resposta **registrada no `MODEL.md` e coerente com 
 | 4 | Event referenciando `authorization_id` desconhecido |
 | 5 | Capture que chega **antes** da authorization. O statement segue `occurred_at` da rede ou a ordem de chegada |
 | 6 | Capture menor que o autorizado sem `final: true`: o que continua reservado |
-| 7 | Available e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
+| 7 | Limit remaining, available e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
 | 8 | Authorization aprovada num mês e capturada no mês seguinte: conta no limite de qual mês |
 
 Desempate: **na dúvida, aprove e registre o alerta**. Bloquear alguém no caixa é a última opção.
@@ -219,7 +219,7 @@ Só S1 e S3 trazem o resultado esperado. Para S2, S4 e S5, escreva no `MODEL.md`
 
 | Cenário | O que a rede faz | Resultado esperado |
 |---|---|---|
-| **S1** | Cinco compras na Ana (129,90 · 45,00 · 300,00 · 80,10 · 15,00), cada uma capturada no valor exato com `final: true` | Ana `available_cents` 143000. Diego `available_cents` 943000. Statement da Ana fecha em 143000 |
+| **S1** | Cinco compras na Ana (129,90 · 45,00 · 300,00 · 80,10 · 15,00), cada uma capturada no valor exato com `final: true` | Ana: `available_cents` 143000, `limit_remaining_cents` 143000. Diego: `available_cents` 943000, `limit_remaining_cents` 5000000. Statement da Ana fecha em 143000 |
 | **S2** | MCC 7995 na Ana · R$ 850,00 na Ana · qualquer valor na Carla · `card_token` inexistente | Você diz |
 | **S3** | Vinte authorizations de R$ 100,00 **simultâneas** no Bruno | Exatamente cinco `approved`. Bruno `available_cents` 0 |
 | **S4** | Authorization de R$ 800,00, MCC 7011, na Ana. Captures de 300,00 · 300,00 · 260,00 (`final: true`) | Você diz |
@@ -264,7 +264,6 @@ Estorno, fechamento do mês, exportação, comprovante, aprovação de despesa, 
 | Comunicação: MODEL, README, commits | 5 |
 
 Modelo completo com implementação parcial vale mais que implementação completa com modelo raso. Se o tempo apertar, entregue as etapas na ordem e documente o que ficou de fora.
-
 
 ---
 
