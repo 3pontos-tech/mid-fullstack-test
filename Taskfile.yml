@@ -31,11 +31,11 @@ tasks:
 
   phpstan:
     desc: Run PHPStan
-    cmd: '{{ .ROOT_DIR }}/vendor/bin/phpstan analyse --ansi'
+    cmd: '{{ .ROOT_DIR }}/vendor/bin/phpstan analyse --ansi --memory-limit=1G'
 
   test-phpstan:
     desc: Run PHPStan in test mode
-    cmd: '{{ .ROOT_DIR }}/vendor/bin/phpstan analyse --ansi'
+    cmd: '{{ .ROOT_DIR }}/vendor/bin/phpstan analyse --ansi --memory-limit=1G'
 
   format:
     desc: Run Rector and Pint and fix the source code

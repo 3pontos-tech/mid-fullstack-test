@@ -26,11 +26,11 @@ test-rector: ## Run Rector in test mode
 
 .PHONY: phpstan
 phpstan: ## Run PHPStan
-	@$(CURDIR)/vendor/bin/phpstan analyse --ansi
+	@$(CURDIR)/vendor/bin/phpstan analyse --ansi --memory-limit=1G
 
 .PHONY: test-phpstan
 test-phpstan: ## Run PHPStan in test mode
-	@$(CURDIR)/vendor/bin/phpstan analyse --ansi
+	@$(CURDIR)/vendor/bin/phpstan analyse --ansi --memory-limit=1G
 
 .PHONY: format
 format: rector pint ## Run Rector and Pint and fix the source code
