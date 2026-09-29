@@ -11,8 +11,8 @@ use Tests\TestCase;
 |--------------------------------------------------------------------------
 |
 | Feature e Unit compartilham o TestCase da aplicação e o RefreshDatabase.
-| Os testes rodam no Postgres de .env.testing, o mesmo banco que você usa
-| em desenvolvimento, para que locks e constraints sejam testados de verdade.
+| Os testes rodam no Postgres de .env.testing, o mesmo servidor que você usa
+| em desenvolvimento, em um banco separado.
 |
 */
 
