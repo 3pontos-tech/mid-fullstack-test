@@ -10,10 +10,14 @@ Diagrama (Mermaid ou imagem) e, para cada coisa que existe nele, uma linha dizen
 
 De três a cinco. Para cada uma: o que você decidiu, a alternativa que rejeitou, e o motivo.
 
-## 3. O que eu esperava dos cenários
+## 3. Riscos e garantias
 
-Antes de implementar, para S2, S4 e S5: o resultado que você espera e por quê. Depois de rodar: bateu? O que mudou?
+Os riscos que você identificou neste domínio. Para cada um: o que pode dar errado, o que no seu código impede que aconteça e qual teste prova isso.
 
-## 4. O que mudou e o que foi descartado
+## 4. O que eu esperava dos cenários
+
+Antes de implementar, para P2 e P3: o resultado que você espera e por quê. Depois de rodar: bateu? O que mudou?
+
+## 5. O que mudou e o que foi descartado
 
 Alterações relevantes do modelo ao longo do caminho, com o motivo. E o que o seu primeiro rascunho, ou a IA, propôs e você não aceitou.
