@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -41,6 +42,10 @@ final class AppServiceProvider extends ServiceProvider
     private function configureCommands(): void
     {
         DB::prohibitDestructiveCommands($this->app->isProduction());
+
+        // `serve` ignores PHP_CLI_SERVER_WORKERS unless reloading is off, so the
+        // default `composer dev` would run a single worker and serialize requests.
+        DevCommands::artisan('serve --no-reload', 'server');
     }
 
     /**
