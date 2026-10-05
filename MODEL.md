@@ -8,7 +8,7 @@ Diagrama (Mermaid ou imagem) e, para cada coisa que existe nele, uma linha dizen
 
 ## 2. Decisões
 
-As oito decisões do enunciado. Para cada uma: o que você decidiu, a alternativa que rejeitou, e o motivo. É contra este texto que conferimos o seu sistema nos pontos que o enunciado deixa em aberto.
+As nove decisões do enunciado. Para cada uma: o que você decidiu, a alternativa que rejeitou, e o motivo. É contra este texto que conferimos o seu sistema nos pontos que o enunciado deixa em aberto.
 
 ## 3. Riscos e garantias
 

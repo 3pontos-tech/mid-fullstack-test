@@ -89,7 +89,7 @@ Não existe nenhum sistema externo neste desafio. A rede é um papel do domínio
 
 ### Mensagens
 
-- Toda mensagem tem um `id`, uma string opaca, não vazia, de até 64 caracteres. O `id` identifica a mensagem, e a rede nunca usa o mesmo `id` para conteúdos diferentes.
+- Toda mensagem chega com um `id`, uma string opaca, não vazia, de até 64 caracteres. Para a rede, esse `id` identifica a mensagem, e ela nunca usa o mesmo `id` para conteúdos diferentes. Isso descreve o que chega, não o seu banco: como o Passa guarda esse valor e com que chave trabalha por dentro é a Decisão 9.
 - Os tipos JSON são estritos: número inteiro é número sem parte fracionária, e string é string. Valores são sempre inteiros em centavos (`*_cents`). `currency` é sempre `BRL`.
 - `occurred_at` é o horário do fato na rede, no formato `AAAA-MM-DDTHH:MM:SSZ` (UTC), e nunca é posterior ao envio. O horário em que a mensagem chega ao Passa não tem significado para o negócio.
 - Campos que o contrato não descreve para aquele tipo de mensagem são ignorados.
@@ -307,6 +307,7 @@ Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaix
 | 6 | O que fazer com um event cuja authorization ainda não chegou, e com uma capture que chega depois de uma cancellation |
 | 7 | A qual mês os valores de uma compra são atribuídos quando a authorization e as captures caem em meses diferentes |
 | 8 | Limite restante, disponível e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
+| 9 | Como identificar os registros por dentro: usar o `id` da rede como chave, manter uma chave própria e guardar o `id` da rede ao lado, ou outra coisa |
 
 Quando os dois caminhos parecerem igualmente bons, desempate assim: **na dúvida, aprove e registre o alerta**. Travar alguém no caixa é a última opção.
 
