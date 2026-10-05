@@ -252,7 +252,7 @@ Valores do mês corrente. `card_token` inexistente: `404`.
 
 1. `month` no formato `AAAA-MM`. Sem `month`, vale o mês corrente. Qualquer mês válido responde `200`, mesmo sem transactions. `month` inválido: `422`. `card_token` inexistente: `404`.
 2. `transactions` traz as transactions das compras do cartão atribuídas a `month`. A ordem é sua, desde que seja estável e documentada no `MODEL.md`.
-3. `occurred_at` e `reference` são os da mensagem de origem da transaction: o `id` da authorization ou do event.
+3. `occurred_at` e `reference` vêm da mensagem que originou a transaction: `reference` é o `id` que a rede mandou naquela authorization ou naquele event, qualquer que seja a chave que você use por dentro.
 4. `amount_cents` negativo reduz o limite restante, positivo devolve, e zero é permitido.
 5. **Invariante:** cada `limit_remaining_after_cents` é o anterior somado ao `amount_cents` da linha, e o primeiro parte de `limit_cents`. O último é igual a `limit_remaining_cents`, que é igual ao `limit_remaining_cents` de `/available` quando `month` é o mês corrente. Sem transactions, `limit_remaining_cents` é igual a `limit_cents`.
 
