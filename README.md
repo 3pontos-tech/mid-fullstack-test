@@ -36,7 +36,6 @@ Cada termo abaixo tem um único significado neste enunciado.
 | **Compra** | Tudo que a rede informa sob o mesmo `id` de authorization: a authorization e os events que a referenciam. Cada compra cuja authorization chegou tem uma única decisão. |
 | **Mês corrente** | O mês calendário atual no fuso da Acme, `America/Sao_Paulo`. |
 | **Mês de uma compra** | O mês, no fuso da Acme, em que você decide contar os valores de uma compra. Decisão 7. |
-| **Capture** | A rede identifica cada capture de uma compra pelo par `authorization_id` + `sequence`. Duas mensagens com o mesmo par são a mesma capture. |
 | **Reserva** | O que uma compra aprovada ainda segura do limite do cartão e do saldo da empresa enquanto a rede não diz o que aconteceu. Quanto cada compra segura em cada momento é a Decisão 4. |
 | **Limite restante** | De um cartão, num mês: quanto do limite mensal ainda cabe naquele mês. Pode ficar negativo. |
 | **Saldo da empresa** | Quanto dos depósitos ainda não foi consumido por captures. |
@@ -111,12 +110,11 @@ Não existe nenhum sistema externo neste desafio. A rede é um papel do domínio
 - A rede atende muitas maquininhas ao mesmo tempo. Várias mensagens podem chegar simultaneamente, inclusive do mesmo cartão.
 - A rede não garante a ordem de chegada. As mensagens de uma compra chegam em qualquer ordem, inclusive events antes da authorization.
 - Maquininhas offline enviam a authorization horas ou dias depois do `occurred_at`.
-- Em reprocessamentos internos, a rede pode emitir de novo um event já enviado, com um `id` novo e todo o resto do conteúdo idêntico.
+- Em reprocessamentos internos, a rede pode mandar de novo um event que já tinha mandado. Nesse caso o `id` é outro e todo o resto do conteúdo é idêntico. É o mesmo fato, não um fato novo.
 
 ### O que a rede garante
 
 - As captures de uma compra têm `sequence` começando em 1, sem lacunas, e a de `final: true` é a última.
-- Cada par `authorization_id` + `sequence` corresponde a uma única capture.
 - Uma compra tem no máximo uma cancellation, sem contar as reemissões.
 - Todo event referencia uma authorization que a rede emitiu, mesmo que ela não tenha chegado ao Passa.
 
@@ -308,6 +306,7 @@ Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaix
 | 7 | A qual mês os valores de uma compra são atribuídos quando a authorization e as captures caem em meses diferentes |
 | 8 | Limite restante, disponível e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
 | 9 | Como identificar os registros por dentro: usar o `id` da rede como chave, manter uma chave própria e guardar o `id` da rede ao lado, ou outra coisa |
+| 10 | Como reconhecer que duas mensagens são o mesmo fato, tanto nas entregas repetidas da mesma mensagem quanto nas reemissões com `id` novo |
 
 Quando os dois caminhos parecerem igualmente bons, desempate assim: **na dúvida, aprove e registre o alerta**. Travar alguém no caixa é a última opção.
 
