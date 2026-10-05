@@ -8,7 +8,7 @@ Diagrama (Mermaid ou imagem) e, para cada coisa que existe nele, uma linha dizen
 
 ## 2. Decisões
 
-De três a cinco. Para cada uma: o que você decidiu, a alternativa que rejeitou, e o motivo.
+As oito decisões do enunciado. Para cada uma: o que você decidiu, a alternativa que rejeitou, e o motivo. É contra este texto que conferimos o seu sistema nos pontos que o enunciado deixa em aberto.
 
 ## 3. Riscos e garantias
 
@@ -16,7 +16,7 @@ Os riscos que você identificou neste domínio. Para cada um: o que pode dar err
 
 ## 4. O que eu esperava dos cenários
 
-Antes de implementar, para P2 e P3: o resultado que você espera e por quê. Depois de rodar: bateu? O que mudou?
+Antes de implementar, para P2 e P3: o resultado que você espera depois de cada mensagem e por quê, decorrendo das suas decisões. Depois de rodar: bateu? O que mudou?
 
 ## 5. O que mudou e o que foi descartado
 

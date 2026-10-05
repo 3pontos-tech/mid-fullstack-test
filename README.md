@@ -35,15 +35,13 @@ Cada termo abaixo tem um único significado neste enunciado.
 |---|---|
 | **Compra** | Tudo que a rede informa sob o mesmo `id` de authorization: a authorization e os events que a referenciam. Cada compra cuja authorization chegou tem uma única decisão. |
 | **Mês corrente** | O mês calendário atual no fuso da Acme, `America/Sao_Paulo`. |
-| **Mês da compra** | O mês calendário, no fuso da Acme, do `occurred_at` da authorization. Todos os valores de uma compra contam nesse mês, qualquer que seja o `occurred_at` dos seus events. |
-| **Compra encerrada** | Compra que recebeu uma cancellation, ou cujas captures de `sequence` 1 até a de `final: true` já foram todas recebidas. |
-| **Capture que conta** | Uma capture, identificada pelo par `authorization_id` + `sequence`, de uma compra cuja authorization já chegou e não foi recusada por `card_not_found`. |
-| **Reserva** | O que uma compra aprovada e não encerrada ainda bloqueia: o valor autorizado menos o já capturado, nunca menos que zero. Compra recusada ou encerrada não reserva nada. |
-| **Uso da compra** | O total capturado mais a reserva. |
-| **Limite restante** | De um cartão, num mês: o limite mensal menos o uso das compras do cartão cujo mês da compra é aquele. Pode ficar negativo. |
-| **Saldo da empresa** | Os depósitos menos as captures que contam. |
-| **Saldo disponível da empresa** | O saldo da empresa menos as reservas de todas as compras, de qualquer mês. |
-| **Disponível** | De um cartão: o menor valor entre o limite restante do mês corrente e o saldo disponível da empresa, nunca menos que zero. Cartão bloqueado tem disponível zero. |
+| **Mês de uma compra** | O mês calendário, no fuso da Acme, a que você decide atribuir os valores de uma compra. Decisão 7. |
+| **Capture distinta** | A rede identifica cada capture de uma compra pelo par `authorization_id` + `sequence`. Duas mensagens com o mesmo par são a mesma capture. |
+| **Reserva** | O que uma compra aprovada ainda bloqueia do limite do cartão e do saldo da empresa enquanto a rede não informa o desfecho. Quanto cada compra bloqueia em cada momento é a Decisão 4. |
+| **Limite restante** | De um cartão, num mês: quanto do limite mensal ainda cabe naquele mês. Pode ficar negativo. |
+| **Saldo da empresa** | Quanto dos depósitos ainda não foi consumido por captures. |
+| **Saldo disponível da empresa** | O saldo da empresa menos o que está bloqueado por compras em aberto. |
+| **Disponível** | De um cartão: o menor valor entre o seu limite restante no mês corrente e o saldo disponível da empresa, nunca menos que zero. Cartão bloqueado tem disponível zero. |
 | **Transaction** | O registro de uma movimentação que altera o limite restante de um cartão, o saldo ou o saldo disponível da empresa. |
 
 ### Dados fixos da Acme
@@ -167,12 +165,12 @@ Resposta `200`:
     | 2 | `card_blocked` | o cartão está bloqueado |
     | 3 | `mcc_blocked` | o MCC está bloqueado para o cartão |
     | 4 | `amount_over_purchase_limit` | o `amount_cents` está acima do teto por compra do cartão |
-    | 5 | `monthly_limit_exceeded` | o `amount_cents` está acima do limite restante do cartão no mês da compra |
+    | 5 | `monthly_limit_exceeded` | o `amount_cents` está acima do limite restante do cartão no mês a que a compra é atribuída |
     | 6 | `insufficient_funds` | o `amount_cents` está acima do saldo disponível da empresa |
 
 2. "Acima" é estritamente maior: um valor igual ao teto, ao limite restante ou ao saldo disponível é aprovado.
 3. Sem nenhum motivo de recusa, a decisão é `approved`, e a compra passa a reservar o valor autorizado.
-4. A decisão é tomada uma única vez, com o estado do momento em que a authorization é processada pela primeira vez. Events da própria compra que chegaram antes dela não entram nessa conta e passam a valer logo depois da decisão.
+4. A decisão é tomada uma única vez, com o estado do momento em que a authorization é processada pela primeira vez. Se events da própria compra já tiverem chegado antes dela, se eles entram nessa conta é a Decisão 6.
 5. O Passa nunca aprova uma compra acima do que a regra 1 permite.
 
 ---
@@ -210,12 +208,10 @@ Resposta `200` ou `202`, corpo livre.
 **Regras**
 
 1. Uma capture informa um valor que a rede **já cobrou** do portador e vai liquidar com o Passa. Ela pode vir em várias partes e com total diferente do autorizado.
-2. Toda capture que conta entra no uso da compra, inclusive acima do autorizado, em compra recusada por outro motivo ou depois de uma cancellation.
-3. Nos MCC 5812 (restaurantes), 7011 (hotéis) e 7512 (aluguel de carros), é esperado que o total capturado de uma compra chegue a até 20% acima do autorizado, inclusive, calculado em centavos sem arredondamento: `capturado × 100 ≤ autorizado × 120`. Nos demais MCC, espera-se até o valor autorizado.
-4. Uma cancellation encerra a compra: a reserva é liberada, e o que já foi capturado continua contando.
-5. Events de uma compra cuja authorization ainda não chegou não têm efeito no limite restante, no saldo nem no saldo disponível da empresa. Quando a authorization chega, eles passam a valer. Events de uma compra recusada por `card_not_found` nunca têm esse efeito. Uma compra cuja authorization não chegou não tem decisão nem é divergência: aparece só no painel (Etapa 4, requisito 7).
-6. Depois que o Passa recebe todas as mensagens de uma compra, o limite restante, o saldo, o saldo disponível e as divergências são os mesmos, qualquer que tenha sido a ordem de chegada.
-7. **Divergência** é uma compra em que o total capturado passa do esperado na regra 3 (numa compra recusada, o autorizado é zero), ou que tem uma capture com `occurred_at` posterior ao da sua cancellation, ou que foi recusada por `card_not_found` e recebeu capture.
+2. Uma cancellation diz que a rede não vai cobrar o que ainda não foi capturado daquela compra.
+3. Nos MCC 5812 (restaurantes), 7011 (hotéis) e 7512 (aluguel de carros), é esperado que o total capturado de uma compra chegue a até 20% acima do autorizado, inclusive, calculado em centavos sem arredondamento: `capturado × 100 ≤ autorizado × 120`. Nos demais MCC, espera-se até o valor autorizado. A rede não garante ficar dentro disso.
+4. A rede pode entregar events de uma compra cuja authorization ainda não chegou ao Passa, e pode entregar capture depois de cancellation.
+5. Depois que o Passa recebe todas as mensagens de uma compra, o limite restante, o saldo e o saldo disponível da empresa são os mesmos, qualquer que tenha sido a ordem de chegada. Esta regra não tem exceção.
 
 ---
 
@@ -255,11 +251,10 @@ Valores do mês corrente. `card_token` inexistente: `404`.
 ```
 
 1. `month` no formato `AAAA-MM`. Sem `month`, vale o mês corrente. Qualquer mês válido responde `200`, mesmo sem transactions. `month` inválido: `422`. `card_token` inexistente: `404`.
-2. `transactions` traz as transactions das compras do cartão cujo mês da compra é `month`, em ordem cronológica de `occurred_at`. Em caso de empate, a ordem é sua, desde que seja estável.
+2. `transactions` traz as transactions das compras do cartão atribuídas a `month`. A ordem é sua, desde que seja estável e documentada no `MODEL.md`.
 3. `occurred_at` e `reference` são os da mensagem de origem da transaction: o `id` da authorization ou do event.
 4. `amount_cents` negativo reduz o limite restante, positivo devolve, e zero é permitido.
-5. Toda authorization aprovada, toda capture que conta e toda cancellation que liberou reserva aparecem ao menos uma vez como `reference`. Authorizations recusadas não aparecem.
-6. **Invariante:** cada `limit_remaining_after_cents` é o anterior somado ao `amount_cents` da linha, e o primeiro parte de `limit_cents`. O último é igual a `limit_remaining_cents`, que é igual ao `limit_remaining_cents` de `/available` quando `month` é o mês corrente. Sem transactions, `limit_remaining_cents` é igual a `limit_cents`.
+5. **Invariante:** cada `limit_remaining_after_cents` é o anterior somado ao `amount_cents` da linha, e o primeiro parte de `limit_cents`. O último é igual a `limit_remaining_cents`, que é igual ao `limit_remaining_cents` de `/available` quando `month` é o mês corrente. Sem transactions, `limit_remaining_cents` é igual a `limit_cents`.
 
 As duas consultas são assinadas como as demais requisições e são os únicos endpoints de leitura com contrato fixo.
 
@@ -276,7 +271,7 @@ Filament em `/admin`, só para a Marina. O painel não cria endpoints: lê o mes
 3. História de cada compra: authorization (`decision` e `reason`), captures e cancellation, com `occurred_at`, em ordem cronológica.
 4. Statement da empresa: depósitos e captures que contam, com o saldo após cada um, e o saldo disponível atual.
 5. Authorizations recusadas, com `reason`.
-6. Divergências.
+6. As compras que o seu modelo marca como anômalas, pelo critério que você definiu na Decisão 5.
 7. Events cuja authorization ainda não chegou.
 8. Uma única ação de escrita: **registrar um depósito** para a empresa.
 9. Um portador que tente acessar o painel recebe `403`.
@@ -298,14 +293,33 @@ Fora do Filament. Livewire, Blade e Tailwind escritos por você.
 
 ---
 
+## Decisões
+
+Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaixo **não há resposta certa**: há resposta registrada no `MODEL.md`, coerente com o código, e sustentada na conversa técnica. Antes de implementar, escreva no `MODEL.md` o que você decidiu e o que a sua decisão produz nos cenários publicados.
+
+| # | Decisão |
+|---|---|
+| 1 | Como representar authorization, capture, cancellation, compra e transaction |
+| 2 | A reserva de uma compra aprovada aparece como transaction no statement, ou só o que foi capturado |
+| 3 | O que fazer com uma capture que passa do esperado na Etapa 2, regra 3 |
+| 4 | O que uma compra bloqueia em cada momento: ao ser aprovada, depois de uma capture parcial, depois da capture com `final: true` e depois de uma cancellation |
+| 5 | Quais compras o seu modelo marca como anômalas, e por quê |
+| 6 | O que fazer com um event cuja authorization ainda não chegou, e com uma capture que chega depois de uma cancellation |
+| 7 | A qual mês os valores de uma compra são atribuídos quando a authorization e as captures caem em meses diferentes |
+| 8 | Limite restante, disponível e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
+
+Desempate, quando a sua decisão deixar dois caminhos igualmente defensáveis: **na dúvida, aprove e registre o alerta**. Travar alguém no caixa é a última opção.
+
+---
+
 ## Como avaliamos
 
 - Antes de cada cenário, rodamos `php artisan migrate:fresh --seed`, com a aplicação no ar via `composer dev` e o `NETWORK_SECRET` do `.env.example`.
 - Os cenários fazem o papel da rede e seguem o **Guia da rede** à risca, inclusive os prazos, as entregas e a ordem. A exceção são os cenários que enviam requisições inválidas de propósito para medir `401`, `404` e `422`.
 - Os cenários enviam no máximo 20 mensagens simultâneas. Entre mensagens cujo resultado depende uma da outra, esperam 5 segundos, salvo entre entregas da mesma mensagem e mensagens enviadas no intervalo entre elas.
-- Medimos três coisas: as respostas que o contrato define; o estado ao final de cada cenário; e, em cada ponto de verificação, o invariante da Etapa 3 e o **Vocabulário**. O estado é medido só pelas consultas da Etapa 3, com pelo menos 5 segundos sem mensagens em trânsito. Divergências e o saldo da empresa são conferidos no painel.
+- Medimos três coisas: as respostas que o contrato define; o estado ao final de cada cenário; e, em cada ponto de verificação, o invariante da Etapa 3. O estado é medido só pelas consultas da Etapa 3, com pelo menos 5 segundos sem mensagens em trânsito. O saldo da empresa e as compras marcadas como anômalas são conferidos no painel, contra o que o seu `MODEL.md` diz.
 - Entre mensagens simultâneas, qualquer ordem de processamento é aceita: nesses casos, medimos os totais.
-- Todo resultado medido decorre deste enunciado. O que o enunciado não define não é medido pelos cenários: é avaliado pela coerência entre o código e o `MODEL.md`.
+- Medimos em dois regimes. O **contrato** — respostas, códigos, motivos de recusa, o invariante da Etapa 3 e a regra 5 da Etapa 2 — é medido contra este enunciado. As **Decisões** são medidas contra o que você escreveu no seu `MODEL.md`: o cenário confere se o sistema faz o que você disse que faria, não se escolheu a mesma coisa que nós. Decisão registrada e cumprida vale ponto, qualquer que seja a escolha.
 - Existem cenários não publicados.
 - Depois da entrega, há uma conversa técnica sobre o seu código e o seu `MODEL.md`.
 
@@ -324,7 +338,7 @@ Resultado esperado:
 
 **P3**: authorization de 400,00 no Bruno, MCC 5812, capturada em 480,00 com `final: true`. Em seguida, authorizations de 50,00 e de 20,00 no Bruno, MCC 5812.
 
-Para P2 e P3, escreva no `MODEL.md`, **antes de implementar**: a decisão de cada authorization; o disponível e o limite restante da Ana ou do Bruno e o disponível do Diego depois de cada mensagem; e se a compra fica como divergência.
+Para P2 e P3, escreva no `MODEL.md`, **antes de implementar**: a decisão de cada authorization; o disponível e o limite restante da Ana ou do Bruno e o disponível do Diego depois de cada mensagem; e se a compra fica marcada como anômala pelo seu critério. É contra esse texto que conferimos as suas Decisões.
 
 ---
 
