@@ -16,7 +16,7 @@ Os riscos que você identificou neste domínio. Para cada um: o que pode dar err
 
 ## 4. O que eu esperava dos cenários
 
-Antes de implementar, para P2 e P3: o resultado que você espera depois de cada mensagem e por quê, decorrendo das suas decisões. Depois de rodar: bateu? O que mudou?
+Antes de implementar, para P2 e P3: o resultado que você espera depois de cada mensagem e por quê, a partir das suas decisões. Depois de rodar: bateu? O que mudou?
 
 ## 5. O que mudou e o que foi descartado
 

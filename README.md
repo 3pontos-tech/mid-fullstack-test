@@ -35,9 +35,9 @@ Cada termo abaixo tem um único significado neste enunciado.
 |---|---|
 | **Compra** | Tudo que a rede informa sob o mesmo `id` de authorization: a authorization e os events que a referenciam. Cada compra cuja authorization chegou tem uma única decisão. |
 | **Mês corrente** | O mês calendário atual no fuso da Acme, `America/Sao_Paulo`. |
-| **Mês de uma compra** | O mês calendário, no fuso da Acme, a que você decide atribuir os valores de uma compra. Decisão 7. |
-| **Capture distinta** | A rede identifica cada capture de uma compra pelo par `authorization_id` + `sequence`. Duas mensagens com o mesmo par são a mesma capture. |
-| **Reserva** | O que uma compra aprovada ainda bloqueia do limite do cartão e do saldo da empresa enquanto a rede não informa o desfecho. Quanto cada compra bloqueia em cada momento é a Decisão 4. |
+| **Mês de uma compra** | O mês, no fuso da Acme, em que você decide contar os valores de uma compra. Decisão 7. |
+| **Capture** | A rede identifica cada capture de uma compra pelo par `authorization_id` + `sequence`. Duas mensagens com o mesmo par são a mesma capture. |
+| **Reserva** | O que uma compra aprovada ainda segura do limite do cartão e do saldo da empresa enquanto a rede não diz o que aconteceu. Quanto cada compra segura em cada momento é a Decisão 4. |
 | **Limite restante** | De um cartão, num mês: quanto do limite mensal ainda cabe naquele mês. Pode ficar negativo. |
 | **Saldo da empresa** | Quanto dos depósitos ainda não foi consumido por captures. |
 | **Saldo disponível da empresa** | O saldo da empresa menos o que está bloqueado por compras em aberto. |
@@ -104,7 +104,7 @@ Não existe nenhum sistema externo neste desafio. A rede é um papel do domínio
 - Quando uma mensagem teve mais de uma entrega, a rede usa a primeira resposta `2xx` ou `4xx` que chegar, venha de qualquer uma das entregas, e descarta as demais.
 - `4xx` significa que o Passa rejeitou a mensagem, e a rede não a entrega de novo. A rede trata uma authorization rejeitada como recusada, sem enviar cancellation. Um event rejeitado vira uma pendência manual entre a rede e o Passa, resolvida fora do sistema.
 - A rede desiste 2 segundos depois da 4ª entrega. Se até lá nenhuma entrega recebeu `2xx` nem `4xx`, ela trata a authorization como recusada e envia depois uma cancellation dela. Um event nessa situação vira pendência manual.
-- Resposta que chega depois de a rede desistir é descartada.
+- Resposta que chega depois que a rede desiste é descartada.
 
 ### Ordem e volume
 
@@ -271,7 +271,7 @@ Filament em `/admin`, só para a Marina. O painel não cria endpoints: lê o mes
 3. História de cada compra: authorization (`decision` e `reason`), captures e cancellation, com `occurred_at`, em ordem cronológica.
 4. Statement da empresa: depósitos e captures que contam, com o saldo após cada um, e o saldo disponível atual.
 5. Authorizations recusadas, com `reason`.
-6. As compras que o seu modelo marca como anômalas, pelo critério que você definiu na Decisão 5.
+6. As compras que o seu sistema sinaliza como problema, pelo critério da Decisão 5.
 7. Events cuja authorization ainda não chegou.
 8. Uma única ação de escrita: **registrar um depósito** para a empresa.
 9. Um portador que tente acessar o painel recebe `403`.
@@ -295,7 +295,7 @@ Fora do Filament. Livewire, Blade e Tailwind escritos por você.
 
 ## Decisões
 
-Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaixo **não há resposta certa**: há resposta registrada no `MODEL.md`, coerente com o código, e sustentada na conversa técnica. Antes de implementar, escreva no `MODEL.md` o que você decidiu e o que a sua decisão produz nos cenários publicados.
+Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaixo **não há resposta certa**: há resposta escrita no `MODEL.md`, coerente com o código, e que você consiga defender na conversa técnica. Antes de implementar, escreva no `MODEL.md` o que você decidiu e o que isso faz acontecer nos cenários publicados.
 
 | # | Decisão |
 |---|---|
@@ -303,12 +303,12 @@ Nenhuma entidade, tabela ou estrutura de pastas é imposta. Para os pontos abaix
 | 2 | A reserva de uma compra aprovada aparece como transaction no statement, ou só o que foi capturado |
 | 3 | O que fazer com uma capture que passa do esperado na Etapa 2, regra 3 |
 | 4 | O que uma compra bloqueia em cada momento: ao ser aprovada, depois de uma capture parcial, depois da capture com `final: true` e depois de uma cancellation |
-| 5 | Quais compras o seu modelo marca como anômalas, e por quê |
+| 5 | Quais compras o seu sistema sinaliza como problema, e por quê |
 | 6 | O que fazer com um event cuja authorization ainda não chegou, e com uma capture que chega depois de uma cancellation |
 | 7 | A qual mês os valores de uma compra são atribuídos quando a authorization e as captures caem em meses diferentes |
 | 8 | Limite restante, disponível e saldo recalculados a cada consulta, mantidos como projeção atualizada a cada transaction, ou os dois |
 
-Desempate, quando a sua decisão deixar dois caminhos igualmente defensáveis: **na dúvida, aprove e registre o alerta**. Travar alguém no caixa é a última opção.
+Quando os dois caminhos parecerem igualmente bons, desempate assim: **na dúvida, aprove e registre o alerta**. Travar alguém no caixa é a última opção.
 
 ---
 
@@ -316,8 +316,8 @@ Desempate, quando a sua decisão deixar dois caminhos igualmente defensáveis: *
 
 - Antes de cada cenário, rodamos `php artisan migrate:fresh --seed`, com a aplicação no ar via `composer dev` e o `NETWORK_SECRET` do `.env.example`.
 - Os cenários fazem o papel da rede e seguem o **Guia da rede** à risca, inclusive os prazos, as entregas e a ordem. A exceção são os cenários que enviam requisições inválidas de propósito para medir `401`, `404` e `422`.
-- Os cenários enviam no máximo 20 mensagens simultâneas. Entre mensagens cujo resultado depende uma da outra, esperam 5 segundos, salvo entre entregas da mesma mensagem e mensagens enviadas no intervalo entre elas.
-- Medimos três coisas: as respostas que o contrato define; o estado ao final de cada cenário; e, em cada ponto de verificação, o invariante da Etapa 3. O estado é medido só pelas consultas da Etapa 3, com pelo menos 5 segundos sem mensagens em trânsito. O saldo da empresa e as compras marcadas como anômalas são conferidos no painel, contra o que o seu `MODEL.md` diz.
+- Os cenários enviam no máximo 20 mensagens simultâneas. Entre mensagens cujo resultado depende uma da outra, esperam 5 segundos, exceto entre entregas da mesma mensagem e mensagens enviadas no intervalo entre elas.
+- Medimos três coisas: as respostas que o contrato define; o estado ao final de cada cenário; e, em cada ponto de verificação, o invariante da Etapa 3. O estado é medido só pelas consultas da Etapa 3, com pelo menos 5 segundos sem mensagens em trânsito. O saldo da empresa e as compras sinalizadas são conferidos no painel, contra o que o seu `MODEL.md` diz.
 - Entre mensagens simultâneas, qualquer ordem de processamento é aceita: nesses casos, medimos os totais.
 - Medimos em dois regimes. O **contrato** — respostas, códigos, motivos de recusa, o invariante da Etapa 3 e a regra 5 da Etapa 2 — é medido contra este enunciado. As **Decisões** são medidas contra o que você escreveu no seu `MODEL.md`: o cenário confere se o sistema faz o que você disse que faria, não se escolheu a mesma coisa que nós. Decisão registrada e cumprida vale ponto, qualquer que seja a escolha.
 - Existem cenários não publicados.
@@ -338,7 +338,7 @@ Resultado esperado:
 
 **P3**: authorization de 400,00 no Bruno, MCC 5812, capturada em 480,00 com `final: true`. Em seguida, authorizations de 50,00 e de 20,00 no Bruno, MCC 5812.
 
-Para P2 e P3, escreva no `MODEL.md`, **antes de implementar**: a decisão de cada authorization; o disponível e o limite restante da Ana ou do Bruno e o disponível do Diego depois de cada mensagem; e se a compra fica marcada como anômala pelo seu critério. É contra esse texto que conferimos as suas Decisões.
+Para P2 e P3, escreva no `MODEL.md`, **antes de implementar**: a decisão de cada authorization; o disponível e o limite restante da Ana ou do Bruno e o disponível do Diego depois de cada mensagem; e se a compra é sinalizada como problema pelo seu critério. É contra esse texto que conferimos as suas Decisões.
 
 ---
 
