@@ -388,9 +388,9 @@ Painel em `http://127.0.0.1:8000/admin`. A área do funcionário fica em `/login
 
 ## Submissão
 
-1. Crie um repositório **privado** a partir deste template ("Use this template", no topo da página).
+1. Crie um repositório **público** a partir deste template ("Use this template", no topo da página).
 2. Desenvolva em uma branch `develop`, com commits incrementais.
-3. Abra um Pull Request de `develop` para `main` **no seu repositório** e dê acesso de leitura às pessoas indicadas no e-mail do processo.
+3. Abra um Pull Request de `develop` para `main` **no seu repositório**.
 4. Envie um e-mail para `maria.luiza@3pontos.com` com uma breve apresentação e o link do Pull Request.
 
 > Estimativa: doze a dezesseis horas de trabalho.
